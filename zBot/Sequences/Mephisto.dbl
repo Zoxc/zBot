@@ -1,0 +1,78 @@
+var Mephisto = {Name: "Mephisto"};
+
+Mephisto.Hellgate = false;
+
+Mephisto.Execute = function()
+{
+   me.TownWaypoint(Area_Durance_of_Hate_Level2);
+   
+	try
+	{
+		me.LocateTiles([68]);
+	}
+	catch(Error if Error instanceof Bot.Error.Sequence)
+	{
+		me.LocateTiles([67]);
+	}
+
+   var MephistoFunc = {};
+   
+   MephistoFunc.Evalute = function()
+   {
+	  return me.Locate(1, 242, null, null, false);
+   };
+
+   Bot.Log.Print("Killing Mephisto");
+
+   Attack.Target(MephistoFunc);
+
+   return true;
+};
+
+Mephisto.Back = function()
+{
+/*
+  if(Mephisto.Hellgate)
+  {
+   Bot.Log.Print("Finding Hellgate");
+
+   var PresetHellgate = getPresetUnits(me.area, 2, 341);
+
+   if((!PresetHellgate) || PresetHellgate.length == 0)
+   {
+     Error("Mephisto",  "Mephisto.Return", [], "Can't locate preset Hellgate!");
+	  return false;
+   }
+   
+   PresetHellgate = PresetHellgate[0];
+   
+   if(!me.Move(PresetHellgate.roomx * 5 + PresetHellgate.x - 6, PresetHellgate.roomy * 5 + PresetHellgate.y))
+	{
+     Error("Mephisto",  "Mephisto.Return", [], "Can't move to Hellgate!");
+	  return false;
+	}
+
+   Bot.Yield(2000); // Let it open
+   
+   var HellgateFind = {};
+	
+   HellgateFind.Evalute = function()
+   {
+	   var Hellgate = me.Locate(2, 342);
+		
+	   if(!Hellgate)
+       {
+	 	  Error("Mephisto",  "Mephisto.Return.HellgateFind.Evalute", [], "Can't locate Hellgate!");
+	 	  return false;
+       }
+	   
+	   return Hellgate;
+    };
+
+   me.WrapInteract(HellgateFind);
+ }
+ else*/
+   me.TownPortal();
+   
+ return true;  
+};

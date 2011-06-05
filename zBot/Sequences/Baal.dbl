@@ -1,0 +1,166 @@
+var Baal = {Name: "Baal"};
+
+Baal.PortalAtThrone = false;
+Baal.WavesOnly = false;
+Baal.PortalUp = false;
+Baal.ThorneX = 0;
+Baal.ThorneY = 0;
+
+Baal.Execute = function()
+{
+	me.TownWaypoint(Area_The_Worldstone_Keep_Level2);
+
+	me.LocateTiles([82, 82]);
+	
+	var PresetBaal = getPresetUnits(me.area, 2, 563)[0];
+	
+	if(!PresetBaal)
+	{
+		Error("Baal",  "Baal.Execute", [], "Can't locate preset Baal Throne!");
+		return false;
+	}
+	
+	Bot.Log.Print("Finding Baal's Throne");
+	
+	this.ThorneX = PresetBaal.roomx * 5 + PresetBaal.x + 1;
+	this.ThorneY = PresetBaal.roomy * 5 + PresetBaal.y + 20;
+
+	Bot.Log.Print("Clearing the area");
+
+   while(true)
+	{ 
+	  Attack.ClearTargets(this.ThorneX, this.ThorneY, this.ClearBaalRoom);
+	  
+	  if(this.PortalAtThrone)
+	  {
+	     Attack.ClearTargets(this.ThorneX, this.ThorneY + 30, this.ClearBaalRoom);
+		 
+		 me.TownPortal(false);
+		 
+		 this.PortalAtThrone = false;
+		 this.PortalUp = true;
+
+		 if(this.PortalText != false)
+			say(this.PortalText);
+		 
+		 Attack.ClearTargets(this.ThorneX, this.ThorneY, this.ClearBaalRoom);
+	  }
+	 
+	  // Eat the corpses so no necro can summon!
+	  me.SetSpell(Spell_Redemption, 0);
+	  
+	  var i = 0;
+	  while(!this.ClearBaalRoom.Evalute() && (i != 25))
+	  {
+	    delay(ReadyTime);
+	    Bot.Process();
+	    i++;
+	  }
+	  
+	  if(this.ClearBaalRoom.LastWave)
+	     break;
+	  
+	  var i = 0;
+	  while(!this.ClearBaalRoom.Evalute() && (i != 210))
+	  {
+	    Bot.Yield(RefreshTime);
+	    i++;
+	  }
+	
+	  while(!this.ClearBaalRoom.Evalute())
+	  {
+		 if(Attack.Hammerdin || Attack.Blizzard)
+		    Attack.Spam(this.ThorneX, this.ThorneY);
+		else
+	 	 {
+		   // Call process to check life and items
+           Bot.Yield(RefreshTime);
+		 }
+	  }
+	
+	  // Call process to check life and items
+	  Bot.Yield(RefreshTime);
+
+	  // Teleport back if we are too far away
+	  if (getDistance(me.x, me.y, this.ThorneX, this.ThorneY) > 10)
+          me.Move(this.ThorneX, this.ThorneY);
+	}
+	
+	// Some suckers might have gotten some monsters up, kill 'em
+	Attack.ClearTargets(this.ThorneX, this.ThorneY, this.ClearBaalRoom);
+	
+	// Do we want to kill Baal?
+	if(this.WavesOnly)
+	   return true;
+
+   var WorldstonePortalFind = {};
+	
+   WorldstonePortalFind.Evalute = function()
+   {
+	   var WorldstonePortal = me.Locate(2, 563);
+		
+	   if(!WorldstonePortal)
+      {
+			Error("Baal",  "Baal.Execute.WorldstonePortalFind.Evalute", [], "Can't locate Worldstone Portal!");
+			return false;
+      }
+	   
+	   return WorldstonePortal;
+   };
+	
+	WorldstonePortalFind.Evalute();
+
+	Bot.Yield(10000);
+	
+	me.WrapInteract(WorldstonePortalFind);
+	
+    var BaalFunc = {};
+   
+    BaalFunc.Evalute = function()
+    {
+	  return getUnit(1, "Baal");
+    };
+
+	Bot.Log.Print("Killing Baal");
+	
+	Attack.Target(BaalFunc);
+
+	return true; 
+};
+
+Baal.Chicken = function()
+{ 
+   if(Baal.PortalUp)
+   {
+      me.Move(Baal.ThorneX, Baal.ThorneY + 30);
+	   me.TownPortal(false);
+   } 
+};
+
+Baal.ClearBaalRoom = {LastWave: false};
+
+Baal.ClearBaalRoom.Evalute = function()
+{
+	var ClosestDistance = 10000; // Should be high enought ^^
+	var ClosestUnit = false;
+	
+	for(var Unit = getUnit(1); Unit; Unit = Unit.getNext())
+	{ 
+		if(Unit.name == "Lister the Tormentor")
+			Baal.ClearBaalRoom.LastWave = true;
+ 
+		var Distance = getDistance(me.x, me.y, Unit.x, Unit.y);
+		if(Distance < ClosestDistance && Unit.hp > 0 && Attack.CanTarget(Unit) && Unit.x > 15070 && Unit.x < 15121 && Unit.y < 5391 && Unit.y > 5001)
+		{
+			ClosestDistance = Distance;
+			ClosestUnit = Unit;
+		}
+	}
+	
+    return ClosestUnit;
+};
+
+Baal.Back = function()
+{
+   me.TownPortal();
+};

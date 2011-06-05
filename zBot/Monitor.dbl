@@ -1,0 +1,23 @@
+var Monitor = function(X, Label)
+{/*
+   this.Hook = getScreenHook();
+	this.Hook.opacity = 2;
+	this.Hook.y = 505;
+	this.Hook.x = X;
+	this.Hook.text = "";
+	this.Hook.color = 1;
+	this.Hook.font = 0;
+*/
+   this.Current = 0;
+	this.Max = 1;
+	this.Label = Label;
+
+	this.SetCurrent = function(Value)
+	{
+	   this.Current = Value;
+	   //this.Hook.text = "ÿc4" + Label + Math.round(this.Current / this.Max * 100) + "%";
+	   
+	};
+
+	//this.Hook.enabled = true;  
+};

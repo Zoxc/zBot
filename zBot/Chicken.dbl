@@ -1,0 +1,98 @@
+var Chicken = {};
+
+Bot.Interrupts.push(Chicken);
+
+Chicken.ReviveMerc = true;
+Chicken.ChickenMana = false;
+Chicken.ChickenLife = 40;
+Chicken.ChickenMercLife = 30;
+Chicken.QuitChickenMana = false;
+Chicken.QuitChickenLife = false;
+Chicken.QuitChickenMercLife = false;
+Chicken.HotKey = false;
+
+Chicken.Execute = function()
+{
+	if(keystate(Chicken.HotKey))
+	{
+	   print("homezaaaa");
+		Chicken.Home();
+		return;
+	}
+	
+  // No need to chicken in town ey?
+  if(me.InTown())
+	return;
+
+  var DoHome = false;
+  var DoQuit = false; 
+  var Merc = me.getMerc();
+  
+  if (Merc != null && Chicken.ReviveMerc && Town.ReviveMerc && (getMercHP() <= 0))
+  {
+     print("ÿc3Chickening, merc is dead");
+	  DoHome = true;
+  }
+  
+  if(Chicken.ChickenMana != false && (me.mp * 100 / me.mpmax < Chicken.ChickenMana)) 
+  {  
+     print("ÿc3Chickening, low mana");
+	  DoHome = true;
+  }
+	 
+  if(Chicken.ChickenLife != false && (me.hp * 100 / me.hpmax < Chicken.ChickenLife))  
+  {  
+     print("ÿc3Chickening, low life");
+	  DoHome = true;
+  }
+  
+  if(Merc != null && Chicken.ChickenMercLife != false && (getMercHP() < Chicken.ChickenMercLife))  
+  {  
+     print("ÿc3Chickening, merc's life is low");
+	  DoHome = true;
+  }
+
+  if(Merc != null && Chicken.QuitChickenMercLife != false && (getMercHP() < Chicken.QuitChickenMercLife))  
+	  DoQuit = true;
+  
+  if(DoHome)
+     Chicken.Home();
+	 
+  if(DoQuit)
+     Chicken.Quit();
+};
+
+Chicken.Home = function()
+{
+  print("ÿc3Chicken");
+  
+  // Make sure we are not moving
+  me.Ready();
+  
+  // Store stats
+  var X = me.x;
+  var Y = me.y;
+  var RightSpell = me.RightSpell;
+  var LeftSpell = me.LeftSpell;
+
+  me.TownPortal();
+  
+  // Check if we got something to do, we better!
+  if(!Town.Flush())
+	delay(2000);
+
+  me.ReturnToTownPortal();
+  
+  if (Bot.Sequence.Chicken != null)
+      Bot.Sequence.Chicken();
+  
+  // Restore stats
+  me.Move(X, Y);  
+  me.SetSpell(RightSpell, 0);
+  me.SetSpell(LeftSpell, 1);  
+};
+
+Chicken.Quit = function()
+{
+  quit();
+};

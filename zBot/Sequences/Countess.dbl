@@ -1,0 +1,26 @@
+var Countess = {Name: "Countess"}
+
+Countess.Execute = function()
+{
+   me.TownWaypoint(Area_Black_March);
+   
+   me.LocateTiles([10, 12, 9, 9, 9, 9]);
+
+   var CountessFunc = {};
+   
+   CountessFunc.Evalute = function()
+   {
+	  return me.Locate(1, "The Countess", 2, 580, false);
+   };
+   
+   Bot.Log.Print("Killing The Countess");
+
+   Attack.Target(CountessFunc);
+
+   return true; 
+}
+
+Countess.Back = function()
+{
+   me.TownPortal();
+}

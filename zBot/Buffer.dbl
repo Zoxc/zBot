@@ -1,0 +1,259 @@
+var Buffer = {};
+
+Bot.Interrupts.push(Buffer);
+
+Buffer.Timeout = 1;
+Buffer.Summon = 2;
+Buffer.Revive = 3;
+
+Buffer.Skill = {};
+
+Buffer.Skill.Timeout = function(Name, ID, Formula)
+{
+	this.Name = Name;
+	this.ID = ID;
+	this.Formula = Formula;
+	this.NextCast = 0;
+	this.Level = 0;
+	
+	this.Info = function()
+	{
+		return "ÿc4 lasting ÿc7" + this.Formula(this.Level) + " ÿc4sec";
+	};
+	
+	this.Check = function()
+	{
+		return getTickCount() > this.NextCast;
+	};
+	
+	this.Cast = function()
+	{
+		var Duration = this.Formula(me.getSkill(this.ID, 1)) * 1000;
+		
+		this.NextCast = getTickCount() + Duration - 2000;
+		
+		Buffer.Cast(this);
+	};
+};
+
+Buffer.Skills = [];
+
+Buffer.BattleCommand = new Buffer.Skill.Timeout("Battle Command", Spell_Battle_Command, function(Level) { return -5 + Level * 10 + 5 * me.getSkill(Spell_Battle_Orders, 0) + 5 * me.getSkill(Spell_Shout, 0); });
+
+// Battle Command needs to be cast twice sometimes
+Buffer.BattleCommand.Cast = function()
+{	
+	if(!me.getState(32))
+		Buffer.Cast(Buffer.BattleCommand);
+		
+	var Duration = Buffer.BattleCommand.Formula(me.getSkill(Buffer.BattleCommand.ID, 1)) * 1000;
+	
+	Buffer.BattleCommand.NextCast = getTickCount() + Duration - 2000;
+		
+	Buffer.Cast(Buffer.BattleCommand);
+};
+
+Buffer.Skills.push(Buffer.BattleCommand);
+
+Buffer.Skills.push(new Buffer.Skill.Timeout("Battle Orders", Spell_Battle_Orders, function(Level) { return 20 + Level * 10 + 5 * me.getSkill(Spell_Battle_Command, 0) + 5 * me.getSkill(Spell_Shout, 0); }));
+
+if(me.classid == Barbarian)
+{
+	Buffer.Skills.push(new Buffer.Skill.Timeout("Shout", Spell_Shout, function(Level) { return 10 + Level * 10 + 5 * me.getSkill(Spell_Battle_Command, 0) + 5 * me.getSkill(Spell_Battle_Orders, 0); }));
+}
+
+if(me.classid == Sorceress)
+{
+	Buffer.Skills.push(new Buffer.Skill.Timeout("Frozen Armor", Spell_Frozen_Armor, function(Level) { return 108 + Level * 12; }));
+	Buffer.Skills.push(new Buffer.Skill.Timeout("Energy Shield", Spell_Energy_Shield, function(Level) { return 84 + Level * 60; }));
+	Buffer.Skills.push(new Buffer.Skill.Timeout("Thunder Storm", Spell_Thunder_Storm, function(Level) { return 24 + Level * 8; }));
+}
+
+if(me.classid == Amazon)
+{
+	//Buffer.Skills.push({Name: "Valkyrie", ID: Spell_Valkyrie, Type: [Buffer.Summon]});
+}
+
+//Assasin
+
+
+if(me.classid == Assasin)
+{
+	Buffer.Skills.push(new Buffer.Skill.Timeout("Venom", Spell_Venom, function(Level) { return 116 + Level * 4; }));
+	/*Buffer.Skills.push({Name: "Cloak of Shadows", ID: Spell_Cloak_of_Shadows, Type: [Buffer.Timeout]});
+	Buffer.Skills.push({Name: "Venom", ID: Spell_Venom, Type: [Buffer.Timeout]});
+	Buffer.Skills.push({Name: "Fade", ID: Spell_Fade, Type: [Buffer.Timeout]});
+	Buffer.Skills.push({Name: "Burst of Speed", ID: Spell_Burst_of_Speed, Type: [Buffer.Timeout]});
+	Buffer.Skills.push({Name: "Shadow Master", ID: Spell_Shadow_Master, Type: []});*/
+}
+
+if(me.classid == Druid)
+{
+	//Buffer.Skills.push({Name: "Cyclone Armor", ID: Spell_Cyclone_Armor, Type: []});
+}
+
+if(me.classid == Necromancer)
+{
+	/*Buffer.Skills.push({Name: "Bone Armor", ID: Spell_Bone_Armor, Type: [Buffer.Timeout]});
+	Buffer.Skills.push({Name: "Clay Golem", ID: Spell_Clay_Golem, Type: [Buffer.Summon]});
+	Buffer.Skills.push({Name: "Fire Golem", ID: Spell_Fire_Golem, Type: [Buffer.Summon]});
+	Buffer.Skills.push({Name: "Blood Golem", ID: Spell_Blood_Golem, Type: [Buffer.Summon]});*/
+}
+
+if(me.classid == Paladin)
+{
+	Buffer.Skills.push(new Buffer.Skill.Timeout("Holy Shield", Spell_Holy_Shield, function(Level) { return 5 + Level * 25; }));
+}
+
+Buffer.Cast = function(Skill)
+{
+	Bot.Log.Print("Casting spell: "+ Skill.Name);
+	print("ÿc5Casting spell: ÿc7"+ Skill.Name);
+
+	me.SetSpell(Skill.ID, 0);
+
+	clickMap(3, 0, me.x, me.y);
+
+	me.CastReady();
+};
+
+Buffer.Execute = function()
+{
+	if(me.InTown())
+		return;
+		
+	for(var i in Buffer.Skills)
+	{
+		if(Buffer.Skills[i].Check())
+		{
+			var Slot = weaponSwitch(1);
+			
+			if(Buffer.Skills[i].Slot != 2)
+				if(Buffer.Skills[i].Slot != Slot)
+					me.WeaponSwitch();
+					
+			Buffer.Skills[i].Cast();
+		}
+	}
+	
+	if(Slot == 1)
+		me.WeaponSwitch();
+};
+	
+Buffer.Init = function()
+{
+	var Slot = weaponSwitch(1);
+
+	for(var i in Buffer.Skills)
+	{
+		if(Buffer.Skills[i].CheckSlot == undefined)
+		{
+			Buffer.Skills[i].Level = [];
+			Buffer.Skills[i].Level[Slot] = me.getSkill(Buffer.Skills[i].ID, 1);
+			
+			if(me.getSkill(Buffer.Skills[i].ID, 4) > 0)
+				Buffer.Skills[i].Level[Slot] = 0;
+		}
+		else
+		{
+			Buffer.Skills[i].CheckSlot(Slot);
+		}
+	}
+
+	me.WeaponSwitch();
+
+	Slot = weaponSwitch(1);
+
+	for(var i in Buffer.Skills)
+	{
+		if(Buffer.Skills[i].CheckSlot == undefined)
+		{
+			Buffer.Skills[i].Level[Slot] = me.getSkill(Buffer.Skills[i].ID, 1);
+		}
+		else
+		{
+			Buffer.Skills[i].CheckSlot(Slot);
+		}
+	}
+
+	// Switch back to slot 0 if needed
+	if(Slot == 1)
+		me.WeaponSwitch();
+
+	for(var i in Buffer.Skills)
+	{
+		if(Buffer.Skills[i].CheckSlot == undefined)
+		{
+			if(Buffer.Skills[i].Level.length > 0 && (Buffer.Skills[i].Level[0] > 0 || Buffer.Skills[i].Level[1] > 0))
+			{
+				if(Buffer.Skills[i].Level[0] == Buffer.Skills[i].Level[1])
+					Buffer.Skills[i].Slot = 2;
+				else if(Buffer.Skills[i].Level[1] > Buffer.Skills[i].Level[0]) 
+					Buffer.Skills[i].Slot = 1;
+				else
+					Buffer.Skills[i].Slot = 0;
+					
+				if(Buffer.Skills[i].Level[0] == Buffer.Skills[i].Level[1])
+					Buffer.Skills[i].Level = Buffer.Skills[i].Level[0];
+				else
+					Buffer.Skills[i].Level = Buffer.Skills[i].Level[Buffer.Skills[i].Slot];
+			}
+			else
+				Buffer.Skills[i].Slot = -1;
+		}
+		else
+		{
+			var Choice = Buffer.Skills[i].Choose();
+			
+			if(Choice != false)
+				Buffer.Skills[i] = Choice;
+			else
+				Buffer.Skills[i].Slot = -1;
+		}
+	}
+	
+	Buffer.Skills = Buffer.Skills.filter(function(Element, Index, Array){ return Element.Slot != -1; });
+	
+	var Sort = function(A, B)
+	{
+		if(A == Buffer.BattleCommand)
+			return -1;
+			
+		if(B == Buffer.BattleCommand)
+			return 1;	
+			
+		if(A.Slot == 2 || B.Slot == 2)	
+			return 0;
+			
+		if(A.Slot == Buffer.BattleCommand.Slot && B.Slot != Buffer.BattleCommand.Slot)
+			return -1;
+			
+		if(B.Slot == Buffer.BattleCommand.Slot && A.Slot != Buffer.BattleCommand.Slot)
+			return 1;
+			
+		return 0;
+	}
+	
+	Buffer.Skills.sort(Sort);
+
+	for(var i in Buffer.Skills)
+	{
+		switch(Buffer.Skills[i].Slot)
+		{
+			case 0:
+				print("ÿc5Precast: ÿc7" + Buffer.Skills[i].Name + " ÿc4in ÿc1Weapon Slot I ÿc4at level ÿc0" + Buffer.Skills[i].Level + Buffer.Skills[i].Info());
+				break;
+				
+			case 1:
+				print("ÿc5Precast: ÿc7" + Buffer.Skills[i].Name + " ÿc4in ÿc3Weapon Slot II ÿc4at level ÿc0" + Buffer.Skills[i].Level + Buffer.Skills[i].Info());
+				break;
+				
+			case 2:
+				print("ÿc5Precast: ÿc7" + Buffer.Skills[i].Name + " ÿc4in any weapon slot at level ÿc0" + Buffer.Skills[i].Level + Buffer.Skills[i].Info());
+				break;
+				
+			default:
+				print("ÿc5Precast: ÿc7" + Buffer.Skills[i].Name + " ÿc4in invalid slot ÿc3" + Buffer.Skills[i].Slot + "ÿc4 at level ÿc0" + Buffer.Skills[i].Level + Buffer.Skills[i].Info());
+		}
+	}
+};

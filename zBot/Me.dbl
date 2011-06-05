@@ -1,0 +1,459 @@
+me.NPCInteract = function(unit)
+{
+   while (!getUIFlag(UI_NPCMenu))
+   {
+     me.Move(unit.x, unit.y);
+     unit.interact();
+	  Bot.Yield(WaitDelay);
+	/* 
+	 if(getUIFlag(UI_QuestTalk))
+	    print("quest!");*/
+   }
+};
+
+me.NPCHasMenu = function(unit, type)
+{
+   return ArrayHas(unit.getMenuEntries(), type);
+};
+
+me.LeftSpell = null;
+me.RightSpell = null;
+
+me.SetSpell = function(Spell, Left)
+{
+    if(Left == 1)
+		me.LeftSpell = Spell
+	else
+	    me.RightSpell = Spell;
+		
+	me.setSkill(Spell, Left);
+};
+
+me.NPCMenu = function(unit, type)
+{
+  // getMenuEntries() doesn't work too good
+  // if(!me.NPCHasMenu(unit, type))
+  //    FatalError("zMe", "me.NPCMenu", [unit, type], "NPC doesn't have the menu item!");
+	  
+   var UIFlag;
+   
+   switch(type)
+   {
+      case Menu_Trade:
+	  case Menu_TradeRepair:
+		UIFlag = UI_TradeRepair;
+	  break;
+   }
+   
+   switch(type)
+   {
+      case Menu_Trade:
+	  case Menu_TradeRepair:
+	  
+		while (!getUIFlag(UIFlag))
+		{
+			unit.useMenu(type);
+			Bot.Yield(WaitDelay);
+		}
+	  break;
+	  
+	  case Menu_RessurectMerc:
+	    while(me.getMerc() == null)
+		{
+			unit.useMenu(type);
+			Bot.Yield(WaitDelay);
+		}
+	  break;
+	  
+   }
+   
+		   /*
+0x1D 
+0x1E 
+0x20 
+0x21   help 
+0x22 
+0x23 
+0x24   Merc screen 
+0x25   scroll of whatever
+   */
+};
+
+me.Ready = function()
+{ 
+	Bot.Yield(RefreshDelay);
+	
+	if (me.InTown())
+	{
+		while(me.mode != 5)
+			Bot.Yield(RefreshDelay);
+	}
+	else
+		while(me.mode != 1)
+			Bot.Yield(RefreshDelay);
+};
+
+me.CastReady = function()
+{
+	Bot.Yield(RefreshDelay);
+	
+	var i = 0;
+   while((me.mode == 10) && (i != 50))
+	{
+		Bot.Yield(RefreshDelay);
+		i++;
+	}
+	if(i == 50)
+	{
+	   print("Crap, we are stuck!");
+	}
+};
+
+me.WalkReady = function()
+{
+   Bot.Yield(RefreshDelay);
+	
+   while(me.mode == 2 || me.mode == 3 || me.mode == 6)
+		Bot.Yield(RefreshDelay);
+};
+
+me.LocateTiles = function(Tiles)
+{
+	for(Tile in Tiles)
+	{
+		var EntraceFind = {};
+		
+		EntraceFind.Evalute = function()
+		{
+			return me.Locate(5, Tiles[Tile]);
+		};
+
+		me.WrapInteract(EntraceFind);
+  }
+};
+
+me.LocatePortal = {};
+
+me.LocatePortal.Evalute = function()
+{
+	var playerName = me.name.toLowerCase();
+	var myPortal = getUnit(2, 59);
+	
+	if(myPortal)
+		do
+		{
+			var parentName = myPortal.getParent();
+			if(parentName && parentName.toLowerCase()==playerName)
+				return myPortal;
+		}
+		while(myPortal.getNext(59));
+		
+	throw new Bot.Error.Fatal("Unable to find town portal");
+};
+
+me.ReturnToTownPortal = function()
+{
+   while(!me.LocatePortal.Evalute())
+	  me.Move(me.TownPortalX, me.TownPortalY);
+
+   me.WrapInteract(me.LocatePortal);
+};
+
+me.TownPortal = function(Interact)
+{
+   if(me.InTown())
+      return false;
+	  
+   var Tome = false;
+   
+   var Items = me.getItems();
+   
+   for(var i in Items)
+      if(Items[i].location == 0 && Items[i].classid == 518)
+         Tome = Items[i];
+	
+   if(!Tome)	
+   {
+	  throw new Bot.Error.Fatal("Can't locate town portal tome!");
+   }
+	
+   if(Tome.getStat(70) == 0)	
+   {
+	  throw new Bot.Error.Fatal("You got no town portals left in tome!");
+   }
+
+   while(!me.LocatePortal.Evalute())
+   {
+      clickItem(1, Tome);
+		Bot.Yield(WaitDelay);
+   }
+
+   if(Interact == null || Interact)
+   {	  
+      me.WrapInteract(me.LocatePortal);
+	  
+	   var TownPortalUnit = me.LocatePortal.Evalute();
+   
+      me.TownPortalX = TownPortalUnit.x;
+      me.TownPortalY = TownPortalUnit.y;
+   }
+   
+   return true;
+};
+
+me.TownWaypoint = function(AreaID)
+{
+   var WaypointIDs = [119, 156, 237, 398, 429]; 
+   
+   var Waypoint = me.Locate(2, WaypointIDs[me.act - 1], null, null, false);
+
+   me.WaypointInteract(Waypoint, AreaID); 
+   
+   return true;
+};
+
+me.WrapInteract = function(UnitFunc) 
+{  
+   var OldArea = me.area;
+
+   var Condition = {Area: OldArea};
+   
+   Condition.Evalute = function()
+   {
+      return Condition.Area != me.area;
+   };
+   
+   while(OldArea == me.area)
+   {	  
+		var Unit = UnitFunc.Evalute();
+		  
+		if(!Unit)
+		{
+			throw new Bot.Error.Sequence("Can't locate unit!");
+		}
+
+		me.Move(Unit.x, Unit.y, Condition);
+
+		Unit.interact();
+
+		delay(WaitDelay);
+   }
+	
+   print("ÿc5Moved to ÿc1" + getArea(me.area).name);
+   
+   Bot.Log.Print("Moved to " + getArea(me.area).name + " using a wrap");
+};
+
+
+me.WaypointInteract = function(Unit, AreaID) 
+{ 
+   var OldArea = me.area;
+
+	me.Move(Unit.x, Unit.y);
+   
+   while(!getUIFlag(UI_Waypoint))
+   {
+      Unit.interact();
+	  
+	   delay(WaitDelay);
+   }
+
+   if(!getWaypoint(AreaID))
+      throw new Bot.Error.Sequence("You do not have the required waypoint [" + Unit + ", " + AreaID + "]");
+
+   while(OldArea == me.area)
+   {
+      Unit.interact(AreaID);
+
+	   delay(WaitDelay);
+   }
+   	  
+   while(getUIFlag(UI_Waypoint))
+   {
+      me.cancel(0);
+	  
+	   Bot.Yield(RefreshDelay);
+   }
+
+   print("ÿc5Moved to ÿc1" + getArea(me.area).name);
+   
+   Bot.Log.Print("Moved to " + getArea(me.area).name + " using a waypoint");
+};
+
+me.MoveClick = function(Point)
+{
+	if(me.InTown())	
+	{
+		clickMap(0, 0, Point[0], Point[1]);
+		me.WalkReady();
+	}
+	else
+	{
+		clickMap(3, 0, Point[0], Point[1]);
+		me.CastReady();
+	}
+};
+
+me.MoveDirect = function(Point, Condition)
+{
+	for(var i = 0; i < 4; i++)
+	{
+		if(Condition != null)
+			if(Condition.Evalute())
+				return true;	
+				
+		if(i > 0)
+			print("ÿc1Step retry #" + i);
+				
+		if(me.InTown())
+			var Offset = WalkOffset;
+		else
+			var Offset = TeleportOffset;
+
+		me.MoveClick(Point);
+		
+		if(Condition != null)
+			if(Condition.Evalute())
+				return true;	
+			
+		if(getDistance(me.x, me.y, Point[0], Point[1]) <= Offset)
+			return false;
+			
+		Bot.Yield(WaitDelay);
+	}
+	
+	return false;
+};
+
+me.MovePathed = function(x, y, Condition)
+{		
+   if(Condition != null)
+	 if(Condition.Evalute())
+	    return true;
+
+   if(getDistance(me.x, me.y, x, y) <= 1)
+      return false;
+	  
+   var path = null
+	
+	if(me.InTown())
+		path = getPath(me.area, me.x, me.y, x, y, false);
+	else
+		path = getPath(me.area, me.x, me.y, x, y, true);
+		
+   if(path == null || path == false || path == [])
+		throw new Bot.Error.Sequence("Unable to find path");
+		
+ /* Does not work
+   if(path.length > 1)
+      path.remove(0);
+*/
+   if(me.InTown())
+   {
+		me.WalkReady();
+   }
+   else
+   {
+		me.SetSpell(Spell_Teleport, 0);
+		me.CastReady();
+   }
+
+   for(var i = 0; i < path.length; i++)
+		if(me.MoveDirect(path[i], Condition))
+			return true;
+	
+   if(Condition != null)
+		return false;
+	else
+		return true;
+};
+
+me.Move = function(x, y, Condition)
+{
+	for(var i = 0; i < 2; i++)
+	{
+		if(i > 0)
+			print("ÿc1Move retry #" + i);
+			
+		var Result = me.MovePathed(x, y, Condition)
+		
+		if(me.InTown())
+			var Offset = WalkOffset;
+		else
+			var Offset = TeleportOffset;
+
+		if(Result || getDistance(me.x, me.y, x, y) <= Offset)
+			return Result;
+	}
+	
+	throw new Bot.Error.Sequence("Unable to move to " + x + ", " + y)
+};
+
+me.InTown = function()
+{
+   return (me.area == Area_Rogue_Encampment) || (me.area == Area_Lut_Gholein) || (me.area == Area_Kurast_Docks) || (me.area == Area_Pandemonium_Fortress) || (me.area == Area_Harrogath);
+};
+
+me.Locate = function(UnitType, UnitID, PresetUnitType, PresetUnitID, CloseUp)
+{
+   var PresetTarget = [];
+   
+   if(PresetUnitType != null) 
+   {
+      PresetTarget = getPresetUnits(me.area, PresetUnitType, PresetUnitID);
+	}
+   else
+      PresetTarget = getPresetUnits(me.area, UnitType, UnitID);
+   
+   if(PresetTarget == null || PresetTarget.length == 0)
+   {
+      throw new Bot.Error.Sequence("Can't locate preset target [" + UnitType + ", " + UnitID + ", " + PresetUnitType + ", " + PresetUnitID + "]");
+   }
+   
+   PresetTarget = PresetTarget[0];
+   
+   var X = PresetTarget.roomx * 5 + PresetTarget.x;
+   var Y = PresetTarget.roomy * 5 + PresetTarget.y;
+   
+   var Condition = {Type: UnitType, ID: UnitID};
+   
+   Condition.Evalute = function()
+   {
+       return getUnit(Condition.Type, Condition.ID);
+   };
+
+   me.Move(X, Y, Condition);
+   
+   var Unit = Condition.Evalute();
+
+   if(!Unit)
+   {
+      throw new Bot.Error.Sequence("Could not find target at destination [" + UnitType + ", " + UnitID + ", " + PresetUnitType + ", " + PresetUnitID + "]");
+   }
+   
+   if((CloseUp == null) || (CloseUp == true))
+      me.Move(Unit.x, Unit.y);
+
+   return Unit;	
+};	 
+
+me.WeaponSwitch = function()
+{
+	this.Slot = weaponSwitch(1);
+	   
+	me.Ready();
+	   
+	while(this.Slot == weaponSwitch(1))
+	{ 
+	   weaponSwitch();
+		   
+		for(var i = 0; i < 10; i++)
+		{				
+	      me.Ready();
+			 
+		   if(this.Slot != weaponSwitch(1))
+				return;
+		}
+	}
+	this.Slot = weaponSwitch(1);
+};

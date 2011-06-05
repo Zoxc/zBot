@@ -1,0 +1,224 @@
+var Attack = {}
+
+Attack.Blizzard = me.getSkill(Spell_Blizzard, 1);
+Attack.Fireball = me.getSkill(Spell_Fire_Ball, 1);
+Attack.Hammerdin = me.getSkill(Spell_Blessed_Hammer, 1);
+
+if(!Attack.Blizzard && !Attack.Fireball && !Attack.Hammerdin)
+   throw "Fuck! we don't know how to attack... Please use a Blizzard sorc, Fireball sorc or a hammerdin";
+
+if(Attack.Blizzard && Attack.Fireball)
+{
+  //if(Attack.Blizzard < Attack.Fireball)
+	 Attack.Blizzard = true;
+  //else 
+	 Attack.Fireball = false;
+}
+
+Attack.CanTarget = function(Unit)
+{
+	/*var MercClasses = [
+		// Act1
+		270, 271, 272, 
+		//Act 2
+		338, 339, 340, 341, 342, 343, 344, 
+		// Act 3
+		359, 
+		// Act 5
+		561, 562];
+	 
+	var Classes = [151, 159, 359, 560, 561, 353, 543, 351, 352];
+	 
+// var Parent = unit.getParent();
+	 
+// if (Parent != null && Parent.type == 0) 
+//    return true;
+
+*/
+	if (getBaseStat(1, Unit.classid, 20) == 0) return false; 
+		 
+	// Align, on our side? 
+	if (getBaseStat(1, Unit.classid, 63)) return false;
+			
+	return true;
+
+	//return ArrayHas(Classes, unit.classid) || ArrayHas(MercClasses, unit.classid);
+};
+
+Attack.Spam = function(x, y)
+{
+	  if(Attack.Hammerdin)
+	  {
+		me.SetSpell(Spell_Blessed_Hammer, 1);
+		me.SetSpell(Spell_Concentration, 0);
+	  }
+	  else if(Attack.Blizzard)
+		me.SetSpell(Spell_Blizzard, 0);
+		
+	  if(Attack.Blizzard)
+		   clickMap(3, 1, x, y);
+	  else if(Attack.Hammerdin)
+		   clickMap(0, 1, x, y);
+		   
+	  me.CastReady();
+};
+
+Attack.UpdateLife = function(Unit)
+{
+	this.Unit = Unit;
+	
+	this.Evalute = function()
+	{
+		if(this.Unit == null)
+			return true;
+			
+		if(!this.Unit.hp > 0)	
+			me.overhead("Target " + Unit.name + " (Dead)")
+		else			
+			Attack.PrintLife(this.Unit);
+			
+		return true;
+	};
+};
+
+Attack.PrintLife = function(Unit)
+{
+	me.overhead("Target " + Unit.name + " (" + Math.round(Unit.hp * 100 / Unit.hpmax) + "%)");
+};
+
+Attack.InSight = function(Unit)
+{
+   var Result = {};
+   
+   Result.Evalute = function()
+   {
+      return checkCollision(me, Unit, 1) == 0;
+   };
+   
+   return Result;
+};
+
+Attack.TargetUnit = function(Unit, Force)
+{
+   var OrigX = Unit.x;
+	var OrigY = Unit.y;
+	var InSight = Attack.InSight(Unit);
+	
+	if(Attack.Fireball)
+	   me.SetSpell(Spell_Fire_Ball, 1)
+	else if(Attack.Hammerdin)
+	   me.SetSpell(Spell_Blessed_Hammer, 1);
+
+	while(Unit.hp > 0)
+	{
+	  if(Attack.Hammerdin)
+	  {
+	    if(getDistance(me.x, me.y, Unit.x, Unit.y) > 2)
+		   me.Move(Unit.x + 1, Unit.y);
+	  }
+	  else
+	  {
+		   me.Move(Unit.x, Unit.y, InSight);
+	  }
+
+	  if(!isUnit(Unit))
+		 return;
+
+	  if(Attack.Hammerdin)
+		me.SetSpell(Spell_Concentration, 0)
+	  else if(Attack.Blizzard)
+		me.SetSpell(Spell_Blizzard, 0);
+
+	  if(Attack.Blizzard)
+		 clickMap(3, 1, Unit);
+	  else
+		 clickMap(0, 1, Unit);
+		   
+	  Attack.PrintLife(Unit);
+
+	  me.CastReady();
+
+	  if(!isUnit(Unit))
+		 return;
+		
+	  if(Attack.Blizzard)
+	  {
+			Bot.Yield(1800, new Attack.UpdateLife(Unit));
+		   
+			if(!isUnit(Unit))
+				return;
+	  }
+		
+      // Don't hunt them down like animals!
+	  if (!Force && getDistance(me.x, me.y, OrigX, OrigY) > 20)
+	     return
+			
+   }
+
+   me.overhead("Target " + Unit.name + " (Dead)"); 
+};
+
+Attack.Target = function(UnitFunc)
+{
+	var HasTarget = UnitFunc.Evalute();
+	
+	while(HasTarget && HasTarget.hp > 0)
+	{
+		Attack.TargetUnit(HasTarget, false);
+		
+		HasTarget = UnitFunc.Evalute();
+	}
+};
+
+Attack.WaitFor = function(UnitFunc)
+{
+   while(!isUnit(UnitFunc.Evalute()))
+		Bot.Yield(RefreshDelay);
+};
+
+Attack.ClearRadius = {};
+Attack.ClearRadius.Evalute = function()
+{
+   var Distance = 50;
+   var ClosestDistance = Distance;
+   var ClosestUnit = false;
+
+   for(var Unit = getUnit(1); Unit; Unit = Unit.getNext())
+   { 
+	  Distance = getDistance(me.x, me.y, Unit.x, Unit.y);
+	  
+	  if(Distance < ClosestDistance && Unit.hp > 0 && Attack.CanTarget(Unit) && getDistance(x, y, Unit.x, Unit.y) < Radius)
+	  {
+		 ClosestDistance = Distance;
+		 ClosestUnit = Unit;
+	  }
+   }
+   
+   return Unit;
+};
+
+Attack.ClearTargets = function(OriginX, OriginY, Targets)
+{
+	var HasTarget = Targets.Evalute();
+	
+	while(HasTarget)
+	{
+		Attack.TargetUnit(HasTarget, false);
+		
+		HasTarget = Targets.Evalute();
+	}
+
+	me.overhead("Returning to origin");
+
+	while(me.Move(OriginX, OriginY, Targets))
+	{
+	    var HasTarget = Targets.Evalute();
+		
+		if(HasTarget)
+		{
+			Attack.TargetUnit(HasTarget, false);
+			me.overhead("Returning to origin");
+		}
+	}
+};
+

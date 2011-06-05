@@ -1,0 +1,217 @@
+js_strict(true);
+
+var Bot = {};
+
+Bot.Log = {};
+
+Bot.Log.Print = function(Info)
+{
+   var Log = File.open("libs\\zBot.txt", FILE_APPEND);
+   
+   Log.write(Info + "\n");
+   
+   Log.close();
+};
+
+Bot.Include = function(Lib, Name)
+{
+	try
+	{
+		if(!include("zBot\\" + Lib))
+		{
+		  print("ÿc1Cound not include library ÿc7" + Name);
+		  Bot.Log.Print("Cound not include library " + Name);
+		  print("ÿc1Errors:");
+		  load("libs\\zBot\\" + Lib);
+		  stop(1);
+		}
+	}
+	catch(Error)
+	{
+		print("ÿc1Exception in ÿc7" + Name + "ÿc3: " + Error.message);
+	}
+};
+
+Bot.Error = {};
+
+Bot.Error.Fatal = function(Message)
+{
+	this.Message = Message;
+};
+
+Bot.Error.Move = function(Message)
+{
+	this.Message = Message;
+};
+
+Bot.Error.Sequence = function(Message)
+{
+	this.Message = Message;
+};
+
+Bot.Error.Interrupt = function(Message)
+{
+	this.Message = Message;
+};
+
+Bot.Interrupts = [];
+Bot.Sequences = [];
+Bot.Quit = false;
+
+Bot.Include("General.dbl", "General");   
+Bot.Include("Monitor.dbl", "Monitor"); 
+Bot.Include("Constants.dbl", "Constants");  
+Bot.Include("Buffer.dbl", "Buffer");
+Bot.Include("Me.dbl", "Me");
+Bot.Include("Attack.dbl", "Attack");
+Bot.Include("Chicken.dbl", "Chicken");   
+Bot.Include("Pause.dbl", "Pause");   
+Bot.Include("Town.dbl", "Town");
+
+Bot.Include("Sequences\\Countess.dbl", "Countess Sequence");
+Bot.Include("Sequences\\Andariel.dbl", "Andariel Sequence");
+Bot.Include("Sequences\\Summoner.dbl", "Summoner Sequence");
+Bot.Include("Sequences\\Mephisto.dbl", "Mephisto Sequence");
+Bot.Include("Sequences\\Diablo.dbl", "Diablo Sequence");
+Bot.Include("Sequences\\Pindleskin.dbl", "Pindleskin Sequence");
+Bot.Include("Sequences\\Shenk.dbl", "Shenk Sequence");
+Bot.Include("Sequences\\Eldritch.dbl", "Eldritch Sequence");
+Bot.Include("Sequences\\Baal.dbl", "Baal Sequence");
+
+print("ÿc4Thanks toÿc0: Sheppard, LivedKrad, Puppses, Shonnie, McGod and lord2800");
+
+Bot.Life = new Monitor(37, "Life: ÿc1");
+Bot.Mana = new Monitor(702, "Mana: ÿc3");
+
+Bot.Go = function(Sequences)
+{
+	Bot.Log.Print("=========================================");
+	Bot.Log.Print(":: Starting session " + Date() + " ::");
+
+	try
+	{
+		// Do we need to pick a corpse?
+		Bot.CheckCorpse();
+
+		// Check precasts
+		Buffer.Init();
+		
+		for(var i in Sequences)
+		{
+			Sequences[i].Done = false;
+		}
+		
+		for(var i in Bot.Interrupts)
+		{
+			Bot.Interrupts[i].Triggered = false;
+		}
+
+		// We need teleport for this to work
+		if(me.getSkill(Spell_Teleport, 1) == 0)
+			throw "You need teleport to use this bot!";
+		
+		for(var i = 0; i < Sequences.length; i++)
+		{
+			print("ÿc5Running sequence: ÿc3"+Sequences[i].Name);
+		  
+			Bot.Log.Print("Running sequence: "+Sequences[i].Name);
+		  
+			if(Sequences[i].Done)
+				throw "You can only do each sequence once!";
+				
+			Town.Flush();	
+			
+			// Do the sequence	
+			try
+			{
+				Bot.Sequence = Sequences[i];
+			  
+				Sequences[i].Execute();
+			}
+			catch(Error if Error instanceof Bot.Error.Sequence)
+			{
+				print("ÿc1Sequence Excepetion: ÿc5" + Error.Message);
+			}
+			
+			// Return to town
+			if(i + 1 < Sequences.length)
+			{
+				Sequences[i].Back(Sequences[i + 1]);
+			}
+			else
+			{
+				Sequences[i].Back(false);
+			}
+
+			Sequences[i].Done = true;
+		}
+	}
+	catch(Error)
+	{
+		Bot.Log.Print("Fatal Excepetion: " + Error.message);
+		print("ÿc1Fatal Excepetion: ÿc5" + Error.message);
+	}
+	
+	Bot.Log.Print(":: Closing session ::");
+	
+	if(Bot.Quit)
+		 quit();  
+};
+
+Bot.Yield = function(SleepDelay, Condition)
+{
+   if(SleepDelay > WaitDelay)
+	{
+		var Old = getTickCount();
+		
+		if(Condition != null)
+		{
+			while(getTickCount() - Old < SleepDelay && Condition.Evalute())
+				Bot.Yield(RefreshDelay);
+		}
+		else
+		{
+			while(getTickCount() - Old < SleepDelay)
+				Bot.Yield(RefreshDelay);
+		}
+	}
+	else
+		delay(SleepDelay);
+
+	Bot.Life.Max = me.hpmax;
+	Bot.Life.SetCurrent(me.hp);
+
+	Bot.Mana.Max = me.mpmax;
+	Bot.Mana.SetCurrent(me.mp);
+ 
+	me.chickenhp = me.hpmax * (Chicken.QuitChickenLife / 100);
+	me.chickenmp = me.mpmax * (Chicken.QuitChickenMana / 100);
+  
+	for(var i in Bot.Interrupts)
+		if(!Bot.Interrupts[i].Triggered)
+		{
+			Bot.Interrupts[i].Triggered = true;
+			
+			try
+			{
+				Bot.Interrupts[i].Execute();
+			}
+			catch(Error if Error instanceof Bot.Error.Interrupt)
+			{
+				print("ÿc1Interrupt Excepetion: ÿc5" + Error.Message);
+			}
+			
+			Bot.Interrupts[i].Triggered = false;
+		}
+};
+
+Bot.CheckCorpse = function()
+{ 
+   for(var Corpse = getUnit(0); Corpse; Corpse = Corpse.getNext())
+      if(Corpse.name == me.name && Corpse.mode == 17)
+      { 
+           print("ÿc1You somehow managed to die, grabbing body"); 
+           Corpse.interact(); 
+           return; 
+      } 
+};

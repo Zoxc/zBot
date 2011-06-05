@@ -1,0 +1,62 @@
+var ArrayHas = function(array, obj)
+{
+        for(var i in array)
+		    if(array[i] == obj)
+			   return true;
+		return false;
+};
+
+function isUnit(obj) {
+        return obj != null &&
+                        obj != undefined &&
+                        typeof(obj) != 'undefined' &&
+                        obj.hasOwnProperty('type') &&
+                        (obj.hasOwnProperty('gid') ||
+                         obj.hasOwnProperty('id'));
+}
+
+
+function FatalError(Lib, Func, Params, Message)
+{
+   //var Output = "";"ÿc7" + Lib + ".dbj ÿc5- ÿc9" + Func + "ÿc5(";
+   
+   var ParamsList = "[";
+   
+   for(Param in Params)
+   {
+      ParamsList += Params[Param];
+	  
+	  if (Param < Params.length - 1)
+	     ParamsList += ', ';
+   }
+
+   print("ÿc1Fatal Error: ÿc5" + Message);
+   Bot.Log.Print("Fatal error in library '"+Lib+"' at function '"+Func+"' with parameters "+ParamsList+"] with message: '" + Message + "'");
+   
+   if(!me.InTown())
+      me.TownPortal();
+	  
+   Bot.Log.Print(":: Forced stop by error ::");
+	  
+   if(Bot.Quit)
+      quit()
+   else
+      stop(1);
+}
+
+function Error(Lib, Func, Params, Message)
+{
+   //var Output = "ÿc7" + Lib + ".dbj ÿc5- ÿc9" + Func + "ÿc5(";
+   
+   var ParamsList = "[";
+   for(Param in Params)
+   {
+      ParamsList += Params[Param];
+	  
+	  if (Param < Params.length - 1)
+	     ParamsList += ', ';
+   }
+   print("ÿc3Error: ÿc5" + Message);
+   
+   Bot.Log.Print("Error in library '"+Lib+"' at function '"+Func+"' with parameters "+ParamsList+"] with message: '" + Message + "'");
+}

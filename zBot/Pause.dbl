@@ -1,0 +1,48 @@
+var Pause = {};
+
+Bot.Interrupts.push(Pause);
+
+Pause.HotKey = 19; // Pause/Break
+
+Pause.Execute = function()
+{
+	if(keystate(19))
+	{
+		var X = me.x;
+		var Y = me.y;
+		var Area = me.area;
+		var AreaName = getArea(me.area).name;
+		var LeftSpell = me.LeftSpell;
+		var RightSpell = me.RightSpell;
+
+		print("ÿc5Bot is paused");
+
+		// Wait until the user release the key
+		while(keystate(19))
+			delay(10);
+		
+		var Pause = true;
+		
+		while(true)	
+		{		
+			// Wait until the user presses the key again	 
+			while(!keystate(19))
+				delay(10);
+
+			if(me.area != Area)
+			{
+				print("ÿc5Please return to ÿc1" + AreaName + " ÿc5before resuming bot");
+					
+				while(keystate(19))
+					delay(10);
+			}
+			else
+				break;
+		}
+
+		me.Move(X, Y);   
+		
+		me.SetSpell(RightSpell, 0);
+		me.SetSpell(LeftSpell, 1);
+	}
+};

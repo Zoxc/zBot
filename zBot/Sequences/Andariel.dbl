@@ -1,0 +1,26 @@
+var Andariel = {Name: "Andariel"};
+
+Andariel.Execute = function()
+{
+   me.TownWaypoint(Area_Catacombs_Level2);
+
+   me.LocateTiles([18, 18]);
+
+   var AndarielFunc = {};
+   
+   AndarielFunc.Evalute = function()
+   {
+	  return me.Locate(1, 156, null, null, false);
+   };
+
+   Bot.Log.Print("Killing Andariel");
+
+   Attack.Target(AndarielFunc);
+   
+   return true;
+};
+
+Andariel.Back = function()
+{
+   me.TownPortal();
+};

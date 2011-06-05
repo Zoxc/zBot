@@ -1,0 +1,30 @@
+var Shenk = {Name: "Shenk"};
+
+Shenk.Execute = function()
+{
+   if(me.area != Area_Frigid_Highlands)
+	   me.TownWaypoint(Area_Frigid_Highlands);
+
+	me.Move(3904, 5113);
+
+   var ShenkFunc = {};
+   
+   ShenkFunc.Evalute = function()
+   {
+	   return getUnit(2, "Shenk");
+   };
+
+   Bot.Log.Print("Killing Shenk");
+
+   Attack.Target(ShenkFunc);
+
+   return true; 
+};
+
+Shenk.Back = function(Next)
+{
+   if(Next == Eldritch)
+		me.Move(3798, 5102)
+	else
+		me.TownPortal();
+};

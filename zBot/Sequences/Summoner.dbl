@@ -1,0 +1,24 @@
+var Summoner = {Name: "Summoner"};
+
+Summoner.Execute = function()
+{
+   me.TownWaypoint(Area_Arcane_Sanctuary);
+
+   var SummonerFunc = {};
+   
+   SummonerFunc.Evalute = function()
+   {
+	  return me.Locate(1, "The Summoner", 2, 357, false);
+   };
+
+   Bot.Log.Print("Killing The Summoner");
+
+   Attack.Target(SummonerFunc);
+
+   return true; 
+}
+
+Summoner.Back = function()
+{
+   me.TownPortal();
+}

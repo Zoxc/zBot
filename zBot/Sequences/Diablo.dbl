@@ -1,0 +1,141 @@
+var Diablo = {Name: "Diablo"};
+
+Diablo.Execute = function()
+{
+   me.TownWaypoint(Area_River_Of_Flame);
+
+   var Exits = getExits(getArea(me.area));
+
+	for(Exit in Exits)
+	{
+	  if (Exits[Exit].id == Area_Chaos_Sanctuary)
+	     var Chaos = Exits[Exit];
+	}
+	
+	print(Chaos.x +" - "+ Chaos.y);
+   
+   if(!me.Move(Chaos.x, Chaos.y))
+	{
+	  print("Can't move :(");
+	  return false;
+	}
+
+   me.SetSpell(Spell_Teleport, 0);
+	
+   // Teleport over the "border"
+	do
+	{
+		me.MoveClick([Chaos.x, Chaos.y - 15]);
+	}
+	while(getDistance(me.x, me.y, Chaos.x, Chaos.y - 15) > TeleportOffset)
+
+   // Grand Vizier of Chaos
+   if(!Diablo.ClearSeal(395))
+		return false;	
+		
+   if(!Diablo.ClearSeal(396))
+		return false;	 
+
+	var Grand_Vizier_of_Chaos = {};
+   
+   Grand_Vizier_of_Chaos.Evalute = function()
+   {
+	  return getUnit(1, "Grand Vizier of Chaos");
+   };
+	
+	Attack.WaitFor(Grand_Vizier_of_Chaos);
+	Attack.Target(Grand_Vizier_of_Chaos);
+	
+	print("to lord de seis");
+
+   // Lord De Seis
+   if(!Diablo.ClearSeal(394))
+		return false;	
+
+	print("move to lord");		
+
+	if(!me.Move(7770, 5169))
+	{
+      Error("Diablo",  "Execute", [ID], "Can't not move to Lord De Seis!");
+	   return false;
+	}
+	
+	print("wait for lord");	
+	
+	var Lord_De_Seis = {};
+   
+   Lord_De_Seis.Evalute = function()
+   {
+	  return getUnit(1, "Lord De Seis");
+   };
+
+	Attack.WaitFor(Lord_De_Seis);
+	Attack.Target(Lord_De_Seis);
+
+   // Infector of Souls
+   if(!Diablo.ClearSeal(393))
+		return false;	
+		
+   if(!Diablo.ClearSeal(392))
+		return false;	
+
+	var Infector_of_Souls = {};
+   
+   Infector_of_Souls.Evalute = function()
+   {
+	  return getUnit(1, "Infector of Souls");
+   };
+	
+	Attack.WaitFor(Infector_of_Souls);
+   Attack.Target(Infector_of_Souls);
+	
+	if(!me.Move(7792, 5292))
+	{
+      Error("Diablo",  "Execute", [ID], "Can't not move to Diablo star!");
+	   return false;
+	}
+	
+	var The_Diablo = {};
+   
+   The_Diablo.Evalute = function()
+   {
+	  return getUnit(1, "Diablo");
+   };
+	
+	Attack.WaitFor(The_Diablo);
+	Attack.Target(The_Diablo);
+
+   return true;
+};
+
+Diablo.ClearSeal = function(ID)
+{
+   var Seal = me.Locate(2, ID);
+   
+   if(!Seal)
+   {
+      Error("Diablo",  "ClearSeal", [ID], "Can't locate seal!");
+	   return true;
+   }
+
+   //Attack.Target(Attack.ClearRadius);
+
+   var SealState = Seal.mode; 
+
+   while(Seal.mode == SealState)
+   {
+		me.Move(Seal.x, Seal.y)
+		
+	   Seal.interact();
+		
+		Bot.Yield(WaitDelay);
+   }
+
+   return true;
+};
+
+Diablo.Back = function()
+{
+   me.TownPortal();
+   return true;
+};

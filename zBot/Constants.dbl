@@ -1,0 +1,111 @@
+// Bot Stuff
+
+// How accurate should the walking/teleporting be
+const TeleportOffset = 6;
+const WalkOffset = 6;
+
+// Process and delay stuff (Lower is worse for the CPU, but faster checks)
+const ProcessLimit = 45;
+const RefreshDelay = 20;
+const WaitDelay = 200;
+
+// Classes
+const Amazon = 0;
+const Sorceress = 1;
+const Necromancer = 2;
+const Paladin = 3;
+const Barbarian = 4;
+const Druid = 5;
+const Assasin = 6;
+
+// Spells
+
+//Amazon
+const Spell_Valkyrie = 0x20;
+
+// Barbarian
+const Spell_Shout = 0x8A;
+const Spell_Battle_Command = 155;
+const Spell_Battle_Orders = 149;
+
+//Assasin
+const Spell_Burst_of_Speed = 0x0102;
+const Spell_Fade = 0x010B;
+const Spell_Cloak_of_Shadows = 264;
+const Spell_Venom = 278;
+const Spell_Shadow_Master = 279;
+
+// Sorceress
+const Spell_Enchant = 52;
+const Spell_Frozen_Armor = 40;
+const Spell_ShiverArmor = 0x32;
+const Spell_ChillingArmor = 0x3C;
+const Spell_Energy_Shield = 58;
+const Spell_Thunder_Storm = 57;
+const Spell_Fire_Ball = 47;
+const Spell_Teleport = 54;
+const Spell_Blizzard = 0x3B;
+
+// Druid
+const Spell_Cyclone_Armor = 235; 
+
+// Necromancer
+const Spell_Bone_Armor = 68;
+const Spell_Clay_Golem = 75;   
+const Spell_Fire_Golem = 94;   
+const Spell_Blood_Golem = 85;  
+
+// Paladin
+const Spell_Holy_Shield = 117;
+const Spell_Blessed_Hammer = 112;
+const Spell_Concentration = 113;
+const Spell_Vigor = 115;
+const Spell_Redemption = 124;   
+
+// Areas
+
+// Act 1
+const Area_Rogue_Encampment = 1;  
+const Area_Black_March = 6;
+const Area_Catacombs_Level2 = 0x23;
+
+// Act 2
+const Area_Lut_Gholein = 40;
+const Area_Arcane_Sanctuary = 74;
+
+// Act3
+const Area_Kurast_Docks = 75;
+const Area_Durance_of_Hate_Level2 = 101;  
+
+// Act 4
+const Area_Pandemonium_Fortress = 103;
+const Area_River_Of_Flame = 107;
+const Area_Chaos_Sanctuary = 108;
+
+// Act 5
+const Area_Harrogath = 109;  
+const Area_Frigid_Highlands = 111;
+const Area_The_Worldstone_Keep_Level2 = 129; 
+
+// NPC Menus
+const Menu_Talk = 0x0D35;
+const Menu_Trade = 0x0D44;  
+const Menu_TradeRepair = 0x0D06;  
+const Menu_Imbue = 0x0FB1;  
+const Menu_Gamble = 0x0D46; 
+const Menu_Hire = 0x0D45;  
+const Menu_GoEast = 0x0D36;  
+const Menu_GoWest = 0x0D37;  
+const Menu_IdentifyItems = 0x0FB4;  
+const Menu_SailEast  = 0x0D38; 
+const Menu_SailWest  = 0x0D39; 
+const Menu_RessurectMerc  = 0x1507; 
+const Menu_AddSockets = 0x58DC;  
+const Menu_Personalize = 0x58DD;  
+const Menu_TravelToHarrogath = 0x58D2; 
+
+// UI Stuff
+const UI_QuestTalk = 0xFF;
+const UI_Waypoint = 0x14;
+const UI_NPCMenu = 0x08;
+const UI_TradeRepair = 0x0C;

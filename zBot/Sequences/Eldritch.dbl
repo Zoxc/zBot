@@ -1,0 +1,28 @@
+var Eldritch = {Name: "Eldritch"};
+
+Eldritch.Execute = function()
+{
+   if(me.area != Area_Frigid_Highlands)
+	   me.TownWaypoint(Area_Frigid_Highlands);
+
+   var EldritchFunc = {};
+   
+   EldritchFunc.Evalute = function()
+   {
+	   return getUnit(1, "Eldritch");
+   };
+
+   Bot.Log.Print("Killing Eldritch");
+
+   Attack.Target(EldritchFunc);
+
+   return true; 
+};
+
+Eldritch.Back = function(Next)
+{
+  if(Next == Shenk)
+		me.Move(3798, 5102)
+	else
+		me.TownPortal();
+};

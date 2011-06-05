@@ -1,0 +1,340 @@
+var Town = {};
+
+Town.HealLifePercentage = 80;
+Town.HealManaPercentage = 80;
+Town.HealMercPercantage = 80;
+Town.MinTownPortals = 5;
+Town.ReviveMerc = false;
+
+Town.Heal = "Heal";
+Town.Pots = "Pots";
+Town.Repair = "Repair";
+Town.Stash = "Stash";
+Town.Identify = "Identify";
+Town.Merc = "Merc";
+Town.Arrows = "Arrows";
+Town.Scrolls = "Scrolls";
+Town.Sell = "Sell";
+
+Town.ActionList = [Town.Heal, Town.Pots, Town.Repair, Town.Stash, Town.Identify, Town.Merc, Town.Arrows, Town.Scrolls, Town.Sell];
+
+Town.Actions = [];
+
+// Healing
+Town.Actions[Town.Heal] = {};
+Town.Actions[Town.Heal].Event = function(){}; // We already have opened the menu here
+Town.Actions[Town.Heal].Condition = function()
+{
+   var Heal = false;
+	
+	if ((Town.HealLifePercentage != false) && ((me.hp * 100 / me.hpmax) < Town.HealLifePercentage))
+		Heal = true;
+		
+	if ((Town.HealManaPercentage != false) && ((me.mp * 100 / me.mpmax) < Town.HealManaPercentage))	
+		Heal = true;
+		
+    var Merc = me.getMerc();
+	
+    if((Merc != null) && (Town.HealMercPercantage != false) && (getMercHP() < Town.HealMercPercantage))
+		Heal = true;
+		
+	return Heal;
+};
+
+// Pots
+Town.Actions[Town.Pots] = {};
+Town.Actions[Town.Pots].Event = function(){};
+Town.Actions[Town.Pots].Condition = function(){ return false; };
+
+// Repairs
+Town.Actions[Town.Repair] = {};
+Town.Actions[Town.Repair].Event = function(){};
+Town.Actions[Town.Repair].Condition = function(){ return false; };
+
+// Stashing
+Town.Actions[Town.Stash] = {};
+Town.Actions[Town.Stash].Event = function(){};
+Town.Actions[Town.Stash].Condition = function(){ return false; };
+
+// Identifing
+Town.Actions[Town.Identify] = {};
+Town.Actions[Town.Identify].Event = function(){};
+Town.Actions[Town.Identify].Condition = function(){ return false; };
+
+// Revive merc
+Town.Actions[Town.Merc] = {};
+Town.Actions[Town.Merc].Event = function(NPC)
+{
+    //if(!me.NPCHasMenu(NPC, Menu_RessurectMerc))
+	//   FatalError("zTown", "Town.Actions[Town.Merc].Event", [NPC], "You have no merc to ressurect! Please turn Town.ReviveMerc off!");
+	
+	me.NPCMenu(NPC, Menu_RessurectMerc);
+
+	delay(WaitDelay);
+};
+
+Town.Actions[Town.Merc].Condition = function()
+{ 
+	return me.getMerc() == null && Town.ReviveMerc;
+};
+
+// Arrows
+Town.Actions[Town.Arrows] = {};
+Town.Actions[Town.Arrows].Event = function(){};
+Town.Actions[Town.Arrows].Condition = function(){ return false; };
+
+// Scrolls
+Town.Actions[Town.Scrolls] = {};
+Town.Actions[Town.Scrolls].Event = function(NPC)
+{
+	if(Town.Actions[Town.Scrolls].TPCount() == -1)
+	{
+	   print("ÿc1You don't have a tome. Buying!");
+		
+		if(!Town.Buy(NPC, "tbk"))
+         throw "Failed to buy tome!";		
+	}
+	
+   while(Town.Actions[Town.Scrolls].TPCount() < 20)
+	{
+		if(!Town.Buy(NPC, "tsc", true))
+		   throw "Failed to buy scrolls!";
+	}
+};
+
+Town.Actions[Town.Scrolls].TPCount = function()
+{
+   var Items = me.getItems();
+
+   for(var i in Items)
+   {
+      if(Items[i].location == 0 && Items[i].classid == 518)
+         return Items[i].getStat(70);
+   }
+   
+   return -1;
+};
+
+Town.Actions[Town.Scrolls].Condition = function()
+{
+   if(Town.MinTownPortals < 1)
+      throw "Town.MinTownPortals is below one!";
+	  
+   return (Town.Actions[Town.Scrolls].TPCount() < 20) && (Town.Actions[Town.Scrolls].TPCount() < Town.MinTownPortals);
+};
+
+// Sell stuff
+Town.Actions[Town.Sell] = {};
+Town.Actions[Town.Sell].Event = function(){};
+Town.Actions[Town.Sell].Condition = function(){ return false; };
+
+Town.Mercs = [];
+
+// Act 1
+Town.Mercs[Area_Rogue_Encampment] = [{Name: "Cain", Priority: 0, GameId: 244, Actions: [Town.Identify]},
+                                     {Name: "Kashya", Priority: 1, GameId: 150, Actions: [Town.Merc]},
+                                     {Name: "Akara", Priority: 2, GameId: 148, Actions: [Town.Heal, Town.Scrolls]},
+                                     {Name: "Charsi", Priority: 3, GameId: 154, Actions: [Town.Repair]},
+                                     {Name: "Gheed", Priority: 4, GameId: 147, Actions: []}];
+
+// Act 2
+Town.Mercs[Area_Lut_Gholein] = [{Name: "Cain", Priority: 0, GameId: 245, Actions: [Town.Identify]},
+                                {Name: "Fara", Priority: 1, GameId: 178, Actions: [Town.Heal, Town.Repair]},
+                                {Name: "Lysander", Priority: 2, GameId: 202, Actions: []},
+                                {Name: "Elzix", Priority: 3, GameId: 199, Actions: []},
+                                {Name: "Greiz", Priority: 4, GameId: 198, Actions: [Town.Merc]},
+                                {Name: "Drognan", Priority: 5, GameId: 177, Actions: [Town.Scrolls]}];
+
+// Act 3
+Town.Mercs[Area_Kurast_Docks] = [{Name: "Cain", Priority: 0, GameId: 246, Actions: [Town.Identify]},
+                                 {Name: "Ormus", Priority: 1, GameId: 255, Actions: [Town.Heal, Town.Scrolls]},
+                                 {Name: "Asheara", Priority: 2, GameId: 252, Actions: [Town.Merc]},
+                                 {Name: "Hratli", Priority: 3, GameId: 253, Actions: [Town.Repair]}];
+
+// Act 4
+Town.Mercs[Area_Pandemonium_Fortress] = [{Name: "Cain", Priority: 0, GameId: 265, Actions: [Town.Identify]},
+                                         {Name: "Tyrael", Priority: 1, GameId: 367, Actions: [Town.Merc]},
+                                         {Name: "Jamella", Priority: 2, GameId: 405, Actions: [Town.Heal, Town.Scrolls]},
+                                         {Name: "Halbu", Priority: 3, GameId: 257, Actions: [Town.Repair]}];
+
+// Act 5
+Town.Mercs[Area_Harrogath] = [{Name: "Malah", Priority: 0, GameId: 513, Actions: [Town.Heal, Town.Scrolls]},
+                              {Name: "Qual-Kehk", Priority: 1, GameId: 515, Actions: [Town.Merc]},
+                              {Name: "Cain", Priority: 2, GameId: 520, Actions: [Town.Identify]},
+                              {Name: "Larzuk", Priority: 3, GameId: 511, Actions:[Town.Repair]}];
+
+Town.NPCs = function()
+{
+  var Actions = [];
+
+  for (var i in Town.ActionList)
+        if(Town.Actions[Town.ActionList[i]].Condition())
+			Actions.push(Town.ActionList[i])
+
+  // Convert actions into a list of NPCs
+  var NPCList = [];
+
+  for(var Action in Actions)
+  {
+    var NPC = Town.LocateNPC(Actions[Action]);
+
+	if(!ArrayHas(NPCList, NPC))
+       NPCList.push(NPC);
+  }
+
+  // Sort after priorities :)
+  NPCList.sort( function(A, B) { return A.Priority - B.Priority; } );
+
+  return NPCList;	  
+};
+
+Town.ActionActive = function(NPC, Action)
+{
+  return ArrayHas(NPC.Actions, Action) && Town.Actions[Action].Condition();
+};
+
+Town.PrintActionList = function(Array)
+{
+  var Result = "";
+  
+  for(var i in Array)
+     if(i == 0)
+		Result += Array[i]
+	 else
+		Result += ", " + Array[i];
+		
+  return Result;
+};
+
+Town.Buy = function(NPC, ItemCode, Shift)
+{
+		var Items = NPC.getItems();
+		
+		while(!Items)
+		{
+			Items = NPC.getItems();
+			delay(WaitDelay);
+				
+			if(!Items)
+				print("ÿc5Waiting for items..");
+		}
+
+		for(var i in Items) 
+		{
+			if (Items[i].code == ItemCode)
+			{
+				if(Items[i].getPrice(NPC, 0, me.diff) > me.getStat(14) +  me.getStat(15))
+				{
+				   Error("zTown", "Town.Buy", [NPC, ItemCode, Shift], "Not enought gold to buy item!");
+				   
+				   delay(WaitDelay);
+				   
+				   return false;
+				}
+				
+				var Result = Items[i].shop(NPC, Shift ? 2 : 6);
+				
+				delay(WaitDelay);
+				
+				return Result;
+			}
+		}		
+		
+		return false;
+};
+	
+Town.Flush = function()
+{
+   print("ÿc3Flushing");
+	
+	if(!me.InTown())
+		return;
+   
+   // Use vigor if we got it
+   me.SetSpell(Spell_Vigor, 0)
+   
+   var Quene = Town.NPCs();
+
+   // List actions 
+   var Index = 1;
+   
+   if(Quene.length == 0)
+      return;
+	  
+   print("ÿc5NPC visit order:");
+   
+   for(var NPC in Quene)
+   {
+     print("ÿc5#" + Index + " ÿc7" + Quene[NPC].Name + " ÿc5[" + Town.PrintActionList(Quene[NPC].Actions) + "]");
+	 
+	 Index++;
+   }
+   
+   // Go to all NPCs
+
+	for(var NPC in Quene)
+	{  
+		Bot.Log.Print("Visiting " + Quene[NPC].Name);
+		
+		var NPCUnit = me.Locate(1, Quene[NPC].GameId);
+
+		me.NPCInteract(NPCUnit);
+		
+		delay(WaitDelay);
+
+		if (Town.ActionActive(Quene[NPC], Town.Heal)) 
+		   Town.Actions[Town.Heal].Event(NPCUnit);
+		   
+		if (Town.ActionActive(Quene[NPC], Town.Merc)) 
+		   Town.Actions[Town.Merc].Event(NPCUnit);
+		
+		if (Town.ActionActive(Quene[NPC], Town.Scrolls) || Town.ActionActive(Quene[NPC], Town.Pots)) 
+		{
+			if (ArrayHas(Quene[NPC].Actions, Town.Repair))
+				me.NPCMenu(NPCUnit, Menu_TradeRepair)
+			else
+				me.NPCMenu(NPCUnit, Menu_Trade);
+				
+			delay(WaitDelay);
+				
+			if (Town.ActionActive(Quene[NPC], Town.Scrolls)) 
+				Town.Actions[Town.Scrolls].Event(NPCUnit);
+				
+
+			if (Town.ActionActive(Quene[NPC], Town.Pots)) 
+				Town.Actions[Town.Pots].Event(NPCUnit);
+					
+				
+			delay(WaitDelay);
+			
+            while(getUIFlag(UI_TradeRepair))			
+			   me.cancel(0);
+		}
+		else	 
+		{
+		   delay(WaitDelay);
+		   
+		   while(getUIFlag(UI_NPCMenu))			
+			   me.cancel(1);
+		}
+			
+   }
+   
+   return;	  
+};
+
+Town.LocateNPC = function(Action)
+{
+   for(var NPC in Town.Mercs[me.area])
+   {
+       var NPCInfo = Town.Mercs[me.area][NPC];
+	   
+	   for(var ActionIndex in NPCInfo.Actions)
+	   {
+           if (Action == NPCInfo.Actions[ActionIndex])
+              return NPCInfo;		   
+	   }
+   }
+   
+   return false;   
+};

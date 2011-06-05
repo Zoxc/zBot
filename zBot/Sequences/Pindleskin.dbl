@@ -1,0 +1,38 @@
+var Pindleskin = {Name: "Pindleskin"};
+
+Pindleskin.Execute = function()
+{
+   if(me.area != Area_Harrogath)
+	   me.TownWaypoint(Area_Harrogath);
+
+   var Portal = {};
+   
+   Portal.Evalute = function()
+   {
+       return getUnit(2, 60);
+   }
+   
+   me.Move(5116, 5118, Portal);
+	
+	me.WrapInteract(Portal);
+
+   var PindleskinFunc = {};
+   
+   PindleskinFunc.Evalute = function()
+   {
+	  return getUnit(1, "Pindleskin");
+   };
+   
+   me.Move(10061, 13238, PindleskinFunc);
+   
+   Bot.Log.Print("Killing Pindleskin");
+
+   Attack.Target(PindleskinFunc);
+
+   return true; 
+};
+
+Pindleskin.Back = function()
+{
+   me.TownPortal();
+};
