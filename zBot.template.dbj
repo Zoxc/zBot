@@ -1,0 +1,71 @@
+js_strict(true); // Gives warnings if your coding sucks :D
+
+function main() 
+{ 
+   delay(500);
+
+   var Start = getTickCount();
+	
+   if(!include("zBot.dbl"))
+   {
+     print("Error appeared in zBot.dbl, please make sure you got the newest D2BS version!");
+	  // Print out the errors or give zBot.dbl doesn't not exist message
+     load("libs\\zBot.dbl");
+   }
+
+   // File for pickit configuration, just ignore if you don't have a pickit installed
+   Bot.PickitConfig = "config\\Items.ini";
+   
+   // Set to true if you want to bot to quit at the end or when an error appears
+   Bot.Quit = false;
+
+   // All healing and chicken settings are in percentages, write false to disable them 
+
+   // When to heal in town, these should be higher than chicken values
+   Town.HealLifePercentage = 70; 
+   Town.HealManaPercentage = 60; 
+   Town.HealMercPercantage = 70; // D2BS has a bug here, might make you always heal
+   
+   // Hotkey to trigger chicken if you need it, made for testing purposes (36 is home key)
+   Chicken.HotKey = 36;
+   
+   // When to chicken to town
+   Chicken.ChickenMana = 5; // Just to make sure you don't stand there doing nothing!
+   Chicken.ChickenLife = 50;
+   Chicken.ChickenMercLife = 25; // D2BS has a bug here, might make you always chicken
+
+   // When to quit!
+   Chicken.QuitChickenMana = false;
+   Chicken.QuitChickenLife = false;
+   Chicken.QuitChickenMercLife = false; // D2BS has a bug here, might make you always quit
+
+   // Revive merc at once if he/she dies in action
+   Chicken.ReviveMerc = true;
+
+   // Don't buy town portals unless it's lower than this (1 will make you only have one portal in tome, it will always fill the tome once it buys)
+   Town.MinTownPortals = 5; 
+
+   // Do you want to use the merc? Turn off if you don't have a merc!!
+   Town.ReviveMerc = true; 
+   
+   // Do you want to use the hellgate to go to Act 4? (It's known to get stuck in Act 4 :( ) 
+   // False makes you use a Town Portal
+   Mephisto.Hellgate = true;
+
+   // Make portal when you are in throne
+   Baal.PortalAtThrone = true; 
+   
+   // What to say after you made the portal, it might not be safe! (false disables)
+   Baal.PortalText = "I've made a portal at throne!";
+   
+   // Only kills the waves, not baal;
+   Baal.WavesOnly = false;
+
+   // Examples Bot.Go([Baal]); or Bot.Go([Baal, Andriel]);
+   // They will be executed in the order they are listed  
+   // You can only do each sequence once
+   // Possible sequences: Countess, Andariel, Summoner, Mephisto, Diablo, Pindleskin, Eldritch, Shenk and Baal
+   Bot.Go([Andariel, Mephisto, Eldritch, Shenk, Baal]); 
+	
+	print("Run done in " + (getTickCount() - Start) / 1000 + " sec");
+}
