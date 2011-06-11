@@ -65,17 +65,17 @@ Town.Actions[Town.Identify].Condition = function(){ return false; };
 Town.Actions[Town.Merc] = {};
 Town.Actions[Town.Merc].Event = function(NPC)
 {
-    //if(!me.NPCHasMenu(NPC, Menu_RessurectMerc))
-	//   FatalError("zTown", "Town.Actions[Town.Merc].Event", [NPC], "You have no merc to ressurect! Please turn Town.ReviveMerc off!");
-	
-	me.NPCMenu(NPC, Menu_RessurectMerc);
+	if(!me.NPCMenu(NPC, Menu_RessurectMerc)) 
+	{
+	   Bot.RaiseFatalError("Town", "Town.Actions[Town.Merc].Event", [NPC], "You have no merc to ressurect! Please turn Town.ReviveMerc off!");
+	}
 
 	delay(WaitDelay);
 };
 
 Town.Actions[Town.Merc].Condition = function()
-{ 
-	return me.getMerc() == null && Town.ReviveMerc;
+{
+	return !me.getMerc() && Town.ReviveMerc;
 };
 
 // Arrows
@@ -257,37 +257,44 @@ Town.Flush = function()
 
    // List actions 
    var Index = 1;
-   
-   if(Quene.length == 0)
-      return;
-	  
+
+	if(Quene.length == 0)
+	{
+		print("ÿc3Nothing to be done in town");
+		return;
+	}
+
    print("ÿc5NPC visit order:");
    
    for(var NPC in Quene)
    {
-     print("ÿc5#" + Index + " ÿc7" + Quene[NPC].Name + " ÿc5[" + Town.PrintActionList(Quene[NPC].Actions) + "]");
-	 
-	 Index++;
+     print("ÿc5#" + Index++ + " ÿc7" + Quene[NPC].Name + " ÿc5[" + Town.PrintActionList(Quene[NPC].Actions) + "]");
    }
+   
+   print("done listing");
    
    // Go to all NPCs
 
 	for(var NPC in Quene)
 	{  
 		Bot.Log.Print("Visiting " + Quene[NPC].Name);
+   print("Visiting " + Quene[NPC].Name);
 		
 		var NPCUnit = me.Locate(1, Quene[NPC].GameId);
 
+   print("interact " + Quene[NPC].Name);
 		me.NPCInteract(NPCUnit);
 		
 		delay(WaitDelay);
 
+   print("do " + Quene[NPC].Name);
 		if (Town.ActionActive(Quene[NPC], Town.Heal)) 
 		   Town.Actions[Town.Heal].Event(NPCUnit);
 		   
 		if (Town.ActionActive(Quene[NPC], Town.Merc)) 
 		   Town.Actions[Town.Merc].Event(NPCUnit);
 		
+   print("ok " + Quene[NPC].Name);
 		if (Town.ActionActive(Quene[NPC], Town.Scrolls) || Town.ActionActive(Quene[NPC], Town.Pots)) 
 		{
 			if (ArrayHas(Quene[NPC].Actions, Town.Repair))
@@ -320,7 +327,7 @@ Town.Flush = function()
 			
    }
    
-   return;	  
+   print("done town");
 };
 
 Town.LocateNPC = function(Action)

@@ -28,7 +28,7 @@ Bot.Include = function(Lib, Name)
 	}
 	catch(Error)
 	{
-		print("ÿc1Exception in ÿc7" + Name + "ÿc3: " + Error.message);
+		print("ÿc1Exception in ÿc7" + Name + "ÿc3: " + Error.toString());
 	}
 };
 
@@ -130,6 +130,7 @@ Bot.Go = function(Sequences)
 			}
 			catch(Error if Error instanceof Bot.Error.Sequence)
 			{
+				Bot.Log.Print("ÿc1Sequence Excepetion: ÿc5" + Error.Message);
 				print("ÿc1Sequence Excepetion: ÿc5" + Error.Message);
 			}
 			
@@ -146,10 +147,10 @@ Bot.Go = function(Sequences)
 			Sequences[i].Done = true;
 		}
 	}
-	catch(Error)
+	catch(Error if  Error instanceof Bot.Error.Fatal)
 	{
-		Bot.Log.Print("Fatal Excepetion: " + Error.message);
-		print("ÿc1Fatal Excepetion: ÿc5" + Error.message);
+		Bot.Log.Print("Fatal Excepetion: " + Error.Message);
+		print("ÿc1Fatal Excepetion: ÿc5" + Error.Message);
 	}
 	
 	Bot.Log.Print(":: Closing session ::");

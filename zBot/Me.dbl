@@ -52,7 +52,9 @@ me.NPCMenu = function(unit, type)
 	  
 		while (!getUIFlag(UIFlag))
 		{
-			unit.useMenu(type);
+			if(!unit.useMenu(type))
+				return false;
+			
 			Bot.Yield(WaitDelay);
 		}
 	  break;
@@ -60,7 +62,9 @@ me.NPCMenu = function(unit, type)
 	  case Menu_RessurectMerc:
 	    while(me.getMerc() == null)
 		{
-			unit.useMenu(type);
+			if(!unit.useMenu(type))
+				return false;
+			
 			Bot.Yield(WaitDelay);
 		}
 	  break;
@@ -77,6 +81,7 @@ me.NPCMenu = function(unit, type)
 0x24   Merc screen 
 0x25   scroll of whatever
    */
+   return true;
 };
 
 me.Ready = function()
@@ -148,7 +153,7 @@ me.LocatePortal.Evalute = function()
 		}
 		while(myPortal.getNext(59));
 		
-	throw new Bot.Error.Fatal("Unable to find town portal");
+	return null;
 };
 
 me.ReturnToTownPortal = function()
@@ -163,15 +168,9 @@ me.TownPortal = function(Interact)
 {
    if(me.InTown())
       return false;
-	  
-   var Tome = false;
+
+   var Tome = me.getItem(518);
    
-   var Items = me.getItems();
-   
-   for(var i in Items)
-      if(Items[i].location == 0 && Items[i].classid == 518)
-         Tome = Items[i];
-	
    if(!Tome)	
    {
 	  throw new Bot.Error.Fatal("Can't locate town portal tome!");
@@ -231,7 +230,8 @@ me.WrapInteract = function(UnitFunc)
 		{
 			throw new Bot.Error.Sequence("Can't locate unit!");
 		}
-
+		
+		
 		me.Move(Unit.x, Unit.y, Condition);
 
 		Unit.interact();
@@ -284,12 +284,12 @@ me.MoveClick = function(Point)
 {
 	if(me.InTown())	
 	{
-		clickMap(0, 0, Point[0], Point[1]);
+		clickMap(0, 0, Point.x, Point.y);
 		me.WalkReady();
 	}
 	else
 	{
-		clickMap(3, 0, Point[0], Point[1]);
+		clickMap(3, 0, Point.x, Point.y);
 		me.CastReady();
 	}
 };
@@ -316,7 +316,7 @@ me.MoveDirect = function(Point, Condition)
 			if(Condition.Evalute())
 				return true;	
 			
-		if(getDistance(me.x, me.y, Point[0], Point[1]) <= Offset)
+		if(getDistance(me.x, me.y, Point.x, Point.y) <= Offset)
 			return false;
 			
 		Bot.Yield(WaitDelay);
@@ -334,20 +334,28 @@ me.MovePathed = function(x, y, Condition)
    if(getDistance(me.x, me.y, x, y) <= 1)
       return false;
 	  
-   var path = null
+	var findPath = function()
+	{
+		if(me.InTown())
+			return getPath(me.area, me.x, me.y, x, y, false);
+		else
+			return getPath(me.area, me.x, me.y, x, y, true);
+	};
+	  
+   
+    var path = findPath();
+	var i = -2;
 	
-	if(me.InTown())
-		path = getPath(me.area, me.x, me.y, x, y, false);
-	else
-		path = getPath(me.area, me.x, me.y, x, y, true);
+	while(!path)
+	{
+		if(i++ > 2)
+			throw new Bot.Error.Sequence("Unable to find path to "+ x + ", " + y);
 		
-   if(path == null || path == false || path == [])
-		throw new Bot.Error.Sequence("Unable to find path");
-		
- /* Does not work
-   if(path.length > 1)
-      path.remove(0);
-*/
+		me.MoveClick({x: me.x + rand(-i * 2, i * 2), y: me.y + rand(-i * 2, i * 2)});
+			
+		path = findPath();
+	} 
+	
    if(me.InTown())
    {
 		me.WalkReady();
@@ -359,8 +367,15 @@ me.MovePathed = function(x, y, Condition)
    }
 
    for(var i = 0; i < path.length; i++)
+   {
+	
+		print("moving step " + (i + 1) + "/" + path.length);
 		if(me.MoveDirect(path[i], Condition))
+		{
+			print("quiting step");
 			return true;
+		}
+	}
 	
    if(Condition != null)
 		return false;
@@ -375,12 +390,13 @@ me.Move = function(x, y, Condition)
 		if(i > 0)
 			print("ÿc1Move retry #" + i);
 			
-		var Result = me.MovePathed(x, y, Condition)
+		var Result = me.MovePathed(x, y, Condition);
+		var Offset;
 		
 		if(me.InTown())
-			var Offset = WalkOffset;
+			Offset = WalkOffset;
 		else
-			var Offset = TeleportOffset;
+			Offset = TeleportOffset;
 
 		if(Result || getDistance(me.x, me.y, x, y) <= Offset)
 			return Result;
@@ -396,21 +412,19 @@ me.InTown = function()
 
 me.Locate = function(UnitType, UnitID, PresetUnitType, PresetUnitID, CloseUp)
 {
-   var PresetTarget = [];
+   var PresetTarget;
    
    if(PresetUnitType != null) 
    {
-      PresetTarget = getPresetUnits(me.area, PresetUnitType, PresetUnitID);
+      PresetTarget = getPresetUnit(me.area, PresetUnitType, PresetUnitID);
 	}
    else
-      PresetTarget = getPresetUnits(me.area, UnitType, UnitID);
+      PresetTarget = getPresetUnit(me.area, UnitType, UnitID);
    
-   if(PresetTarget == null || PresetTarget.length == 0)
+   if(!PresetTarget)
    {
       throw new Bot.Error.Sequence("Can't locate preset target [" + UnitType + ", " + UnitID + ", " + PresetUnitType + ", " + PresetUnitID + "]");
    }
-   
-   PresetTarget = PresetTarget[0];
    
    var X = PresetTarget.roomx * 5 + PresetTarget.x;
    var Y = PresetTarget.roomy * 5 + PresetTarget.y;
@@ -421,6 +435,8 @@ me.Locate = function(UnitType, UnitID, PresetUnitType, PresetUnitID, CloseUp)
    {
        return getUnit(Condition.Type, Condition.ID);
    };
+   
+   print("locating " + UnitType + " : " + UnitID);
 
    me.Move(X, Y, Condition);
    
@@ -431,8 +447,15 @@ me.Locate = function(UnitType, UnitID, PresetUnitType, PresetUnitID, CloseUp)
       throw new Bot.Error.Sequence("Could not find target at destination [" + UnitType + ", " + UnitID + ", " + PresetUnitType + ", " + PresetUnitID + "]");
    }
    
+   
+	Bot.Log.Print("unit at" + Unit.x  + ", " + Unit.y + " - preset " + X+ ", "+Y);
+	   print("moving close up");
+
    if((CloseUp == null) || (CloseUp == true))
       me.Move(Unit.x, Unit.y);
+
+	Bot.Log.Print("unit loacted at" + Unit.x  + ", " + Unit.y);
+	   print("located");
 
    return Unit;	
 };	 

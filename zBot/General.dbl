@@ -16,7 +16,7 @@ function isUnit(obj) {
 }
 
 
-function FatalError(Lib, Func, Params, Message)
+Bot.RaiseFatalError = function(Lib, Func, Params, Message)
 {
    //var Output = "";"ÿc7" + Lib + ".dbj ÿc5- ÿc9" + Func + "ÿc5(";
    
@@ -42,9 +42,9 @@ function FatalError(Lib, Func, Params, Message)
       quit()
    else
       stop(1);
-}
+};
 
-function Error(Lib, Func, Params, Message)
+Bot.RaiseError = function(Lib, Func, Params, Message)
 {
    //var Output = "ÿc7" + Lib + ".dbj ÿc5- ÿc9" + Func + "ÿc5(";
    
@@ -59,4 +59,4 @@ function Error(Lib, Func, Params, Message)
    print("ÿc3Error: ÿc5" + Message);
    
    Bot.Log.Print("Error in library '"+Lib+"' at function '"+Func+"' with parameters "+ParamsList+"] with message: '" + Message + "'");
-}
+};

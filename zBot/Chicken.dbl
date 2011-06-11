@@ -13,17 +13,17 @@ Chicken.HotKey = false;
 
 Chicken.Execute = function()
 {
-	if(keystate(Chicken.HotKey))
-	{
-	   print("homezaaaa");
-		Chicken.Home();
-		return;
-	}
-	
   // No need to chicken in town ey?
   if(me.InTown())
 	return;
-
+/*
+	if(Chicken.HotKey && keystate(Chicken.HotKey))
+	{
+		print("ÿc3Chickening, hotkey pressed");
+		Chicken.Home();
+		return;
+	}
+*/
   var DoHome = false;
   var DoQuit = false; 
   var Merc = me.getMerc();
